@@ -33,14 +33,14 @@ if (fs.existsSync(CLIENT_DIST)) {
 } else {
   app.get('/', (req, res) => {
     res.status(200).send(
-      '<h1>SoulConnect</h1><p>Frontend not built yet. Run <code>npm run build</code> in the app folder.</p>'
+      '<h1>GraceLine Answers</h1><p>Frontend not built yet. Run <code>npm run build</code> in the app folder.</p>'
     );
   });
 }
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`[soulconnect] listening on :${PORT}`);
+  console.log(`[graceline-answers] listening on :${PORT}`);
 });
 
 module.exports = app;

@@ -48,7 +48,7 @@ router.post('/', submitLimiter, async (req, res) => {
     const base = process.env.PUBLIC_BASE_URL || '';
     sendMail({
       to: admin.email,
-      subject: `[SoulConnect] New question${crisis.isCrisis ? ' — URGENT' : ''}`,
+      subject: `[GraceLine Answers] New question${crisis.isCrisis ? ' — URGENT' : ''}`,
       text: `A new question was submitted.\n\nCategory: ${category || '—'}\nTitle: ${title}\n\nOpen the inbox: ${base}/admin/inbox`,
     });
   }

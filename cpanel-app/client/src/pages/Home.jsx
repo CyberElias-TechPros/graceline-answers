@@ -24,7 +24,7 @@ export default function Home() {
         and only then publishes it to the archive.</p>
       </div>
       <p className="muted">
-        SoulConnect is a ministry, not a substitute for licensed therapy or
+        GraceLine Answers is a ministry, not a substitute for licensed therapy or
         emergency care. If you are in crisis, please contact local emergency
         services or a crisis hotline immediately.
       </p>

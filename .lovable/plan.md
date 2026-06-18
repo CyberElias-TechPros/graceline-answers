@@ -1,4 +1,4 @@
-# SoulConnect — cPanel/DirectAdmin Deployment Plan
+# GraceLine Answers — cPanel/DirectAdmin Deployment Plan
 
 ## Hard constraint first
 You're hosting on cPanel/DirectAdmin "Setup Node.js App" (Phusion Passenger). That rules out the current Lovable template (TanStack Start targeting Cloudflare Workers) and rules out Supabase/Vercel/Redis/S3. Everything must live in **one Node process** that Passenger can boot from a single `app.js` entry, using only the filesystem and a local DB.

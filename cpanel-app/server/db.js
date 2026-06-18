@@ -84,14 +84,14 @@ function seedBootstrap() {
   const email = process.env.ADMIN_BOOTSTRAP_EMAIL;
   const pw = process.env.ADMIN_BOOTSTRAP_PASSWORD;
   if (!email || !pw) {
-    console.warn('[soulconnect] No users and no ADMIN_BOOTSTRAP_EMAIL/PASSWORD set. Skipping seed.');
+    console.warn('[graceline-answers] No users and no ADMIN_BOOTSTRAP_EMAIL/PASSWORD set. Skipping seed.');
     return;
   }
   const hash = bcrypt.hashSync(pw, 10);
   db.prepare(
     'INSERT INTO users (email, password_hash, name, role, created_at) VALUES (?, ?, ?, ?, ?)'
   ).run(email.toLowerCase(), hash, 'Lead Counselor', 'admin', Date.now());
-  console.log(`[soulconnect] Seeded bootstrap admin: ${email}`);
+  console.log(`[graceline-answers] Seeded bootstrap admin: ${email}`);
 }
 seedBootstrap();
 

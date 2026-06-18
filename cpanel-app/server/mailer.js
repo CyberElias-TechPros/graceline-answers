@@ -16,7 +16,7 @@ function getTransporter() {
 async function sendMail({ to, subject, text, html }) {
   const t = getTransporter();
   if (!t) {
-    console.log('[soulconnect] SMTP not configured, skipping email:', subject);
+    console.log('[graceline-answers] SMTP not configured, skipping email:', subject);
     return;
   }
   try {
@@ -25,7 +25,7 @@ async function sendMail({ to, subject, text, html }) {
       to, subject, text, html,
     });
   } catch (e) {
-    console.error('[soulconnect] mail error:', e.message);
+    console.error('[graceline-answers] mail error:', e.message);
   }
 }
 

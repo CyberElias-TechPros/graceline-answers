@@ -5,7 +5,7 @@ export default function Layout() {
     <>
       <header className="site">
         <div className="wrap">
-          <Link to="/" className="brand">SoulConnect</Link>
+          <Link to="/" className="brand">GraceLine Answers</Link>
           <nav>
             <Link to="/ask">Ask</Link>
             <Link to="/archive">Archive</Link>

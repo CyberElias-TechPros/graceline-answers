@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "SoulConnect — Source for cPanel deployment" },
+      { title: "GraceLine Answers — Source for cPanel deployment" },
       { name: "description", content: "Single Node.js app for cPanel/DirectAdmin shared hosting." },
     ],
   }),
@@ -14,7 +14,7 @@ function Index() {
   return (
     <div style={{ minHeight: "100vh", background: "#f7f5f0", color: "#1f2a37", fontFamily: "ui-serif, Georgia, serif" }}>
       <div style={{ maxWidth: 760, margin: "0 auto", padding: "60px 24px" }}>
-        <h1 style={{ fontSize: 36, margin: 0 }}>SoulConnect</h1>
+        <h1 style={{ fontSize: 36, margin: 0 }}>GraceLine Answers</h1>
         <p style={{ color: "#475569", fontSize: 17 }}>
           Evangelical counseling & Bible Q&A — a single Node.js app you deploy
           to your cPanel / DirectAdmin shared hosting.

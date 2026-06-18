@@ -48,7 +48,7 @@ router.post('/counselor', (req, res) => {
     const base = process.env.PUBLIC_BASE_URL || '';
     sendMail({
       to: q.seeker_email,
-      subject: '[SoulConnect] You have a new response',
+      subject: '[GraceLine Answers] You have a new response',
       text: `A counselor has replied to your question.\n\nView the conversation: ${base}/t/${q.tracking_token}`,
     });
   }

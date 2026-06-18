@@ -1,4 +1,4 @@
-# Deploying SoulConnect on cPanel / DirectAdmin
+# Deploying GraceLine Answers on cPanel / DirectAdmin
 
 This is a single Node.js app — Express serves both the JSON API and the
 pre-built React SPA. No external database, no Redis, no S3, no third-party
@@ -8,12 +8,12 @@ email service. Everything lives in this folder.
 
 1. **Upload this `cpanel-app/` folder** to your hosting account (File
    Manager → upload zip → Extract, or use Git Version Control in cPanel).
-   Put it somewhere like `/home/youruser/soulconnect`.
+   Put it somewhere like `/home/youruser/graceline-answers`.
 
 2. **cPanel → Setup Node.js App → Create Application**
    - Node.js version: 18 or 20
    - Application mode: Production
-   - Application root: `soulconnect` (the folder you just uploaded)
+   - Application root: `graceline-answers` (the folder you just uploaded)
    - Application URL: your domain or subdomain
    - Application startup file: `app.js`
 
