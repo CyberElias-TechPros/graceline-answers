@@ -1,46 +1,14 @@
-const path = require('path');
-const fs = require('fs');
-const express = require('express');
-const cookieParser = require('cookie-parser');
+'use strict';
 
-const questions = require('./routes/questions');
-const messages = require('./routes/messages');
-const archive = require('./routes/archive');
-const admin = require('./routes/admin');
-const prayer = require('./routes/prayer');
+const { createApp } = require('./app');
 
-const app = express();
-app.set('trust proxy', 1);
-app.disable('x-powered-by');
-app.use(express.json({ limit: '200kb' }));
-app.use(cookieParser());
-
-// API
-app.use('/api/questions', questions);
-app.use('/api/messages', messages);
-app.use('/api/archive', archive);
-app.use('/api/admin', admin);
-app.use('/api/prayer', prayer);
-app.get('/api/health', (req, res) => res.json({ ok: true, ts: Date.now() }));
-
-// Static SPA
-const CLIENT_DIST = path.join(__dirname, '..', 'client', 'dist');
-if (fs.existsSync(CLIENT_DIST)) {
-  app.use(express.static(CLIENT_DIST, { maxAge: '1h', index: false }));
-  app.get(/^(?!\/api\/).*/, (req, res) => {
-    res.sendFile(path.join(CLIENT_DIST, 'index.html'));
-  });
-} else {
-  app.get('/', (req, res) => {
-    res.status(200).send(
-      '<h1>GraceLine Answers</h1><p>Frontend not built yet. Run <code>npm run build</code> in the app folder.</p>'
-    );
-  });
-}
+const app = createApp();
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`[graceline-answers] listening on :${PORT}`);
+const HOST = process.env.HOST || '0.0.0.0';
+
+app.listen(PORT, HOST, () => {
+  console.log(`[graceline-answers] listening on http://${HOST}:${PORT}`);
 });
 
 module.exports = app;

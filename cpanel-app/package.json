@@ -1,15 +1,20 @@
 {
   "name": "graceline-answers",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Evangelical Counseling & Bible Q&A — single Node.js app for cPanel/DirectAdmin shared hosting.",
+  "description": "GraceLine Answers — anonymous Bible Q&A and faith-centered Christian counseling. Single Node.js app for cPanel/DirectAdmin shared hosting.",
   "main": "app.js",
   "scripts": {
     "dev:server": "node --watch server/index.js",
     "dev:client": "vite --config client/vite.config.js",
     "build": "vite build --config client/vite.config.js",
     "start": "node app.js",
+    "test": "node --test",
+    "test:watch": "node --test --watch",
     "postinstall": "echo 'Install complete. Next: npm run build, then restart the Node.js app in cPanel.'"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -19,12 +24,11 @@
     "express": "^4.21.1",
     "express-rate-limit": "^7.4.1",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^1.4.5-lts.1",
-    "nanoid": "^5.0.7",
     "nodemailer": "^6.9.15"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.2",
+    "lucide-react": "^0.575.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.2",

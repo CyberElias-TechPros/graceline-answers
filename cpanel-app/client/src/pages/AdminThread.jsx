@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api, fmt } from '../lib/api';
+import { useSeo } from '../lib/seo';
+import { AlertTriangle, Send, StickyNote, Globe, ArrowLeft } from 'lucide-react';
 
 export default function AdminThread() {
   const { id } = useParams();
@@ -9,7 +11,10 @@ export default function AdminThread() {
   const [note, setNote] = useState('');
   const [pub, setPub] = useState({ public_title: '', public_content: '', public_answer: '', is_public: false });
   const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
   const lastIdRef = useRef(0);
+
+  useSeo({ title: 'Counselor Thread', noindex: true });
 
   async function load() {
     try {
@@ -22,9 +27,14 @@ export default function AdminThread() {
         public_answer: r.question.public_answer || '',
         is_public: !!r.question.is_public,
       });
-    } catch (e) { setErr(e.message); }
+    } catch (e) {
+      setErr(e.message);
+    }
   }
-  useEffect(() => { load(); }, [id]);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   useEffect(() => {
     if (!data) return;
@@ -35,7 +45,9 @@ export default function AdminThread() {
           setData((d) => ({ ...d, messages: [...d.messages, ...r.messages] }));
           lastIdRef.current = r.messages[r.messages.length - 1].id;
         }
-      } catch {}
+      } catch {
+        /* ignore */
+      }
     }, 3000);
     return () => clearInterval(t);
   }, [data, id]);
@@ -43,87 +55,174 @@ export default function AdminThread() {
   async function sendReply(e) {
     e.preventDefault();
     if (!reply.trim()) return;
-    await api('/messages/counselor', { method: 'POST', body: { question_id: Number(id), content: reply } });
-    setReply(''); load();
+    setBusy(true);
+    try {
+      await api('/messages/counselor', { method: 'POST', body: { question_id: Number(id), content: reply } });
+      setReply('');
+      await load();
+    } catch (e2) {
+      setErr(e2.message);
+    } finally {
+      setBusy(false);
+    }
   }
   async function addNote(e) {
     e.preventDefault();
     if (!note.trim()) return;
     await api(`/admin/questions/${id}/note`, { method: 'POST', body: { content: note } });
-    setNote(''); load();
+    setNote('');
+    await load();
   }
   async function setStatus(status) {
     await api(`/admin/questions/${id}/status`, { method: 'POST', body: { status } });
-    load();
+    await load();
   }
   async function savePublish(e) {
     e.preventDefault();
-    await api(`/admin/questions/${id}/publish`, { method: 'POST', body: pub });
-    load();
+    setBusy(true);
+    try {
+      await api(`/admin/questions/${id}/publish`, { method: 'POST', body: pub });
+      await load();
+    } catch (e2) {
+      setErr(e2.message);
+    } finally {
+      setBusy(false);
+    }
   }
 
-  if (err) return <p style={{ color: 'var(--warn)' }}>{err}</p>;
-  if (!data) return <p>Loading…</p>;
+  if (err && !data)
+    return (
+      <div className="container container-narrow section">
+        <div className="form-error">{err}</div>
+      </div>
+    );
+  if (!data)
+    return (
+      <div className="container container-narrow section">
+        <div className="state">
+          <div className="skeleton" style={{ height: 34, width: '50%', margin: '0 auto 1rem' }} />
+          <div className="skeleton" style={{ height: 220 }} />
+        </div>
+      </div>
+    );
+
   const q = data.question;
-
   return (
-    <>
-      <p className="muted"><Link to="/admin/inbox">← Inbox</Link></p>
-      <h1>{q.raw_title}</h1>
-      <div>
-        {q.is_urgent ? <span className="tag urgent">Urgent</span> : null}
-        {q.category && <span className="tag">{q.category}</span>}
-        <span className="muted">{q.seeker_email || 'anonymous'} · status: {q.status} · {fmt(q.created_at)}</span>
+    <div>
+      <p style={{ margin: '0 0 1.2rem' }}>
+        <Link to="/admin/inbox" className="btn btn-ghost btn-sm" style={{ marginLeft: '-0.7rem' }}>
+          <ArrowLeft size={15} /> Inbox
+        </Link>
+      </p>
+
+      <div className="row wrap">
+        <h1 style={{ fontSize: '1.8rem', margin: 0 }}>{q.raw_title}</h1>
+        {q.is_urgent ? (
+          <span className="tag urgent">
+            <AlertTriangle size={13} /> Urgent
+          </span>
+        ) : null}
       </div>
-      <div className="card" style={{ marginTop: 12 }}>
-        <p style={{ whiteSpace: 'pre-wrap' }}>{q.raw_content}</p>
+      <div className="row wrap" style={{ margin: '0.5rem 0 1rem' }}>
+        {q.category && <span className="tag outline">{q.category}</span>}
+        <span className="muted">
+          {q.seeker_email || 'anonymous'} · status: <strong>{q.status}</strong> · {fmt(q.created_at)}
+        </span>
       </div>
 
-      <div className="row" style={{ margin: '12px 0' }}>
-        <button onClick={() => setStatus('active')} className="secondary" style={{ flex: 0 }}>Mark Active</button>
-        <button onClick={() => setStatus('resolved')} className="secondary" style={{ flex: 0 }}>Mark Resolved</button>
+      <div className="card">
+        <div style={{ whiteSpace: 'pre-wrap' }}>{q.raw_content}</div>
       </div>
 
-      <h2>Conversation</h2>
+      <div className="row wrap" style={{ margin: '1.2rem 0 1.6rem' }}>
+        <button className="btn btn-secondary btn-sm" onClick={() => setStatus('active')}>
+          Mark Active
+        </button>
+        <button className="btn btn-secondary btn-sm" onClick={() => setStatus('resolved')}>
+          Mark Resolved
+        </button>
+        <button className="btn btn-ghost btn-sm" onClick={() => setStatus('new')}>
+          Mark New
+        </button>
+      </div>
+
+      <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        Conversation
+      </h3>
+      {data.messages.length === 0 && <p className="muted">No messages yet.</p>}
       {data.messages.map((m) => (
         <div key={m.id} className={`msg ${m.sender_type}`}>
           <div style={{ whiteSpace: 'pre-wrap' }}>{m.content}</div>
-          <div className="muted" style={{ marginTop: 4 }}>{m.sender_type} · {fmt(m.created_at)}</div>
+          <div className="meta">
+            <span className="label">{m.sender_type === 'counselor' ? 'Counselor' : 'Seeker'}</span>
+            {' · '}
+            {fmt(m.created_at)}
+          </div>
         </div>
       ))}
-      <form onSubmit={sendReply} className="card">
-        <label>Reply to seeker</label>
-        <textarea value={reply} onChange={(e) => setReply(e.target.value)} />
-        <div style={{ marginTop: 10 }}><button>Send reply</button></div>
+
+      <form onSubmit={sendReply} className="panel" style={{ marginTop: '1.2rem' }}>
+        <label htmlFor="reply">Reply to seeker</label>
+        <textarea id="reply" value={reply} onChange={(e) => setReply(e.target.value)} />
+        <div style={{ marginTop: '0.9rem' }}>
+          <button className="btn btn-primary" disabled={busy}>
+            <Send size={16} /> {busy ? 'Sending…' : 'Send reply'}
+          </button>
+        </div>
       </form>
 
-      <h2>Internal notes (private)</h2>
+      <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '2.2rem' }}>
+        <StickyNote size={18} /> Internal notes (private)
+      </h3>
       {data.notes.map((n) => (
-        <div className="card" key={n.id}>
-          <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{n.content}</p>
-          <p className="muted" style={{ marginTop: 6 }}>{n.author_name || 'staff'} · {fmt(n.created_at)}</p>
+        <div className="card" key={n.id} style={{ padding: '1.1rem' }}>
+          <div style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{n.content}</div>
+          <div className="muted" style={{ marginTop: '0.6rem' }}>
+            {n.author_name || 'counselor'} · {fmt(n.created_at)}
+          </div>
         </div>
       ))}
-      <form onSubmit={addNote} className="card">
-        <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note visible only to counselors…" />
-        <div style={{ marginTop: 10 }}><button className="secondary">Add note</button></div>
+      <form onSubmit={addNote} className="panel" style={{ marginTop: '0.9rem' }}>
+        <label htmlFor="note">Add a private note</label>
+        <textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Visible only to counselors…" />
+        <div style={{ marginTop: '0.9rem' }}>
+          <button className="btn btn-secondary">Add note</button>
+        </div>
       </form>
 
-      <h2>Publish to archive (sanitize first)</h2>
-      <form onSubmit={savePublish} className="card">
-        <p className="muted">A question is never auto-published. Edit the public copy below to remove anything that could identify the seeker, then toggle "Make public".</p>
-        <label>Public title</label>
-        <input value={pub.public_title} onChange={(e) => setPub({ ...pub, public_title: e.target.value })} />
-        <label>Public question (sanitized)</label>
-        <textarea value={pub.public_content} onChange={(e) => setPub({ ...pub, public_content: e.target.value })} />
-        <label>Public answer</label>
-        <textarea value={pub.public_answer} onChange={(e) => setPub({ ...pub, public_answer: e.target.value })} />
-        <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input type="checkbox" style={{ width: 'auto' }} checked={pub.is_public} onChange={(e) => setPub({ ...pub, is_public: e.target.checked })} />
-          <span>Make public in archive</span>
+      <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '2.2rem' }}>
+        <Globe size={18} /> Publish to archive
+      </h3>
+      <form onSubmit={savePublish} className="panel">
+        <p className="form-hint" style={{ marginTop: 0 }}>
+          A question is never auto-published. Edit the public copy below to remove anything that
+          could identify the seeker, then toggle "Make public". A question is public ONLY when its
+          public title, content, and answer are all provided.
+        </p>
+        <label htmlFor="pub_title">Public title</label>
+        <input id="pub_title" value={pub.public_title} onChange={(e) => setPub({ ...pub, public_title: e.target.value })} />
+        <label htmlFor="pub_content">Public question (sanitized)</label>
+        <textarea id="pub_content" value={pub.public_content} onChange={(e) => setPub({ ...pub, public_content: e.target.value })} />
+        <label htmlFor="pub_answer">Public answer</label>
+        <textarea id="pub_answer" value={pub.public_answer} onChange={(e) => setPub({ ...pub, public_answer: e.target.value })} />
+        <label className="checkbox-row">
+          <input
+            type="checkbox"
+            checked={pub.is_public}
+            onChange={(e) => setPub({ ...pub, is_public: e.target.checked })}
+          />
+          <span>
+            <strong>Make public in archive.</strong> A question is only shown publicly when its
+            sanitized title, question, and answer are present.
+          </span>
         </label>
-        <div style={{ marginTop: 10 }}><button>Save</button></div>
+        {err && <div className="form-error">{err}</div>}
+        <div style={{ marginTop: '1rem' }}>
+          <button className="btn btn-primary" disabled={busy}>
+            {pub.is_public ? 'Publish to archive' : 'Save draft'}
+          </button>
+        </div>
       </form>
-    </>
+    </div>
   );
 }
