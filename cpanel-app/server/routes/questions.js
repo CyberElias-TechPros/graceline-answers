@@ -1,26 +1,66 @@
+'use strict';
+
 const express = require('express');
-const { nanoid } = require('nanoid');
 const rateLimit = require('express-rate-limit');
 const db = require('../db');
 const { detectCrisis } = require('../crisis');
 const { sendMail } = require('../mailer');
+const { randomToken, clampString } = require('../util');
 
 const router = express.Router();
 
-const submitLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 10 });
+const submitLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many submissions. Please try again later.' },
+});
 
-// Submit a new question (anonymous or with email)
-router.post('/', submitLimiter, async (req, res) => {
-  const { title, content, category, email } = req.body || {};
-  if (!title || !content || String(title).length < 3 || String(content).length < 10) {
+/**
+ * Notify the counselor pool that a new question arrived. Sends to every
+ * counselor/admin account (a small, curated group), so the burden is shared.
+ */
+function notifyCounselors({ title, category, isCrisis, trackingToken }) {
+  const rows = db
+    .prepare("SELECT email FROM users WHERE role IN ('admin','counselor') ORDER BY id ASC")
+    .all();
+  if (!rows.length) return;
+  const base = (process.env.PUBLIC_BASE_URL || '').replace(/\/$/, '');
+  const subject = `[GraceLine Answers] New question${isCrisis ? ' — URGENT' : ''}`;
+  const text =
+    `A new question was submitted.\n\n` +
+    `Category: ${category || '—'}\n` +
+    `Title: ${title}\n\n` +
+    `Open the inbox: ${base}/admin/inbox\n` +
+    (trackingToken ? `Private thread link: ${base}/t/${trackingToken}\n` : '');
+  for (const row of rows) {
+    sendMail({ to: row.email, subject, text });
+  }
+}
+
+// Submit a new question (anonymous or with email).
+router.post('/', submitLimiter, (req, res) => {
+  const title = clampString(req.body?.title, 200);
+  const content = clampString(req.body?.content, 8000);
+  const category = clampString(req.body?.category, 50);
+  const email = req.body?.email ? String(req.body.email).trim().slice(0, 255) : null;
+
+  if (!title || !content) {
     return res.status(400).json({ error: 'Please write a clear title and a longer question.' });
   }
-  if (String(title).length > 200 || String(content).length > 8000) {
-    return res.status(400).json({ error: 'Your message is too long.' });
+  if (title.length < 3) {
+    return res.status(400).json({ error: 'Please write a title of at least 3 characters.' });
+  }
+  if (content.length < 10) {
+    return res.status(400).json({ error: 'Please write a question of at least 10 characters.' });
+  }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: 'Please enter a valid email address.' });
   }
 
   const crisis = detectCrisis(`${title}\n${content}`);
-  const token = nanoid(24);
+  const token = randomToken(18);
   const now = Date.now();
 
   // Privacy: deliberately do NOT store IP, user-agent, fingerprint, or anything
@@ -30,50 +70,38 @@ router.post('/', submitLimiter, async (req, res) => {
       `INSERT INTO questions
        (tracking_token, seeker_email, category, raw_title, raw_content,
         is_urgent, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, 'new', ?, ?)`
+       VALUES (?, ?, ?, ?, ?, ?, 'new', ?, ?)`,
     )
-    .run(
-      token,
-      email ? String(email).trim().slice(0, 255) : null,
-      category ? String(category).slice(0, 50) : null,
-      String(title).trim(),
-      String(content).trim(),
-      crisis.isCrisis ? 1 : 0,
-      now, now
-    );
+    .run(token, email, category || null, title, content, crisis.isCrisis ? 1 : 0, now, now);
 
-  // Notify counselor pool via the bootstrap admin email
-  const admin = db.prepare("SELECT email FROM users WHERE role IN ('admin','counselor') LIMIT 1").get();
-  if (admin) {
-    const base = process.env.PUBLIC_BASE_URL || '';
-    sendMail({
-      to: admin.email,
-      subject: `[GraceLine Answers] New question${crisis.isCrisis ? ' — URGENT' : ''}`,
-      text: `A new question was submitted.\n\nCategory: ${category || '—'}\nTitle: ${title}\n\nOpen the inbox: ${base}/admin/inbox`,
-    });
-  }
+  notifyCounselors({
+    title,
+    category,
+    isCrisis: crisis.isCrisis,
+    trackingToken: token,
+  });
 
-  res.json({
+  res.status(201).json({
     id: info.lastInsertRowid,
     tracking_token: token,
     crisis,
   });
 });
 
-// Fetch a seeker's thread by tracking token
+// Fetch a seeker's thread by tracking token.
 router.get('/by-token/:token', (req, res) => {
   const q = db
     .prepare(
       `SELECT id, tracking_token, category, raw_title AS title, raw_content AS content,
               is_urgent, status, created_at
-       FROM questions WHERE tracking_token = ?`
+       FROM questions WHERE tracking_token = ?`,
     )
     .get(req.params.token);
   if (!q) return res.status(404).json({ error: 'not_found' });
   const messages = db
     .prepare(
       `SELECT id, sender_type, content, created_at FROM messages
-       WHERE question_id = ? ORDER BY id ASC`
+       WHERE question_id = ? ORDER BY id ASC`,
     )
     .all(q.id);
   const crisis = detectCrisis(`${q.title}\n${q.content}`);

@@ -6,10 +6,44 @@ export async function api(path, opts = {}) {
     body: opts.body ? JSON.stringify(opts.body) : undefined,
   });
   let data = null;
-  try { data = await res.json(); } catch {}
-  if (!res.ok) throw new Error((data && data.error) || `HTTP ${res.status}`);
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
+  }
+  if (!res.ok) {
+    const message = (data && data.error) || `Request failed (${res.status})`;
+    const error = new Error(message);
+    error.status = res.status;
+    throw error;
+  }
   return data;
 }
+
 export function fmt(ts) {
-  return new Date(ts).toLocaleString();
+  if (!ts) return '';
+  try {
+    return new Date(ts).toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  } catch {
+    return '';
+  }
+}
+
+export function fmtDate(ts) {
+  if (!ts) return '';
+  try {
+    return new Date(ts).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  } catch {
+    return '';
+  }
 }
