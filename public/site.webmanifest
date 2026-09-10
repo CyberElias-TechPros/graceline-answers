@@ -1,0 +1,15 @@
+{
+  "name": "GraceLine Answers",
+  "short_name": "GraceLine",
+  "description": "Anonymous Bible Q&A and faith-centered Christian counseling.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "minimal-ui",
+  "background_color": "#f7f3ea",
+  "theme_color": "#101a24",
+  "lang": "en",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

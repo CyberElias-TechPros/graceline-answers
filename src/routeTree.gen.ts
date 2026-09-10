@@ -9,50 +9,403 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as PublicRouteImport } from './routes/_public'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
+import { Route as PublicIndexRouteImport } from './routes/_public/index'
+import { Route as PublicAboutRouteImport } from './routes/_public/about'
+import { Route as PublicAskRouteImport } from './routes/_public/ask'
+import { Route as PublicPrayerRouteImport } from './routes/_public/prayer'
+import { Route as PublicPrivacyRouteImport } from './routes/_public/privacy'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminAuditRouteImport } from './routes/admin/audit'
+import { Route as AdminInboxRouteImport } from './routes/admin/inbox'
+import { Route as AdminLoginRouteImport } from './routes/admin/login'
+import { Route as AdminTeamRouteImport } from './routes/admin/team'
+import { Route as PublicArchiveIndexRouteImport } from './routes/_public/archive/index'
+import { Route as PublicArchiveSlugRouteImport } from './routes/_public/archive/$slug'
+import { Route as PublicTTokenRouteImport } from './routes/_public/t.$token'
+import { Route as AdminQuestionsIdRouteImport } from './routes/admin/questions.$id'
+import { Route as PublicArchiveCategorySlugRouteImport } from './routes/_public/archive/category.$slug'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const PublicRoute = PublicRouteImport.update({
+  id: '/_public',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRouteRoute = AdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublicIndexRoute = PublicIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicAboutRoute = PublicAboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicAskRoute = PublicAskRouteImport.update({
+  id: '/ask',
+  path: '/ask',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicPrayerRoute = PublicPrayerRouteImport.update({
+  id: '/prayer',
+  path: '/prayer',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicPrivacyRoute = PublicPrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => PublicRoute,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminAuditRoute = AdminAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminInboxRoute = AdminInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminTeamRoute = AdminTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const PublicArchiveIndexRoute = PublicArchiveIndexRouteImport.update({
+  id: '/archive/',
+  path: '/archive/',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicArchiveSlugRoute = PublicArchiveSlugRouteImport.update({
+  id: '/archive/$slug',
+  path: '/archive/$slug',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicTTokenRoute = PublicTTokenRouteImport.update({
+  id: '/t/$token',
+  path: '/t/$token',
+  getParentRoute: () => PublicRoute,
+} as any)
+const AdminQuestionsIdRoute = AdminQuestionsIdRouteImport.update({
+  id: '/questions/$id',
+  path: '/questions/$id',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const PublicArchiveCategorySlugRoute =
+  PublicArchiveCategorySlugRouteImport.update({
+    id: '/archive/category/$slug',
+    path: '/archive/category/$slug',
+    getParentRoute: () => PublicRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
+  '/': typeof PublicIndexRoute
+  '/about': typeof PublicAboutRoute
+  '/ask': typeof PublicAskRoute
+  '/prayer': typeof PublicPrayerRoute
+  '/privacy': typeof PublicPrivacyRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/inbox': typeof AdminInboxRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/team': typeof AdminTeamRoute
+  '/admin/': typeof AdminIndexRoute
+  '/archive/$slug': typeof PublicArchiveSlugRoute
+  '/t/$token': typeof PublicTTokenRoute
+  '/admin/questions/$id': typeof AdminQuestionsIdRoute
+  '/archive/': typeof PublicArchiveIndexRoute
+  '/archive/category/$slug': typeof PublicArchiveCategorySlugRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/about': typeof PublicAboutRoute
+  '/ask': typeof PublicAskRoute
+  '/prayer': typeof PublicPrayerRoute
+  '/privacy': typeof PublicPrivacyRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/inbox': typeof AdminInboxRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/team': typeof AdminTeamRoute
+  '/': typeof PublicIndexRoute
+  '/admin': typeof AdminIndexRoute
+  '/archive/$slug': typeof PublicArchiveSlugRoute
+  '/t/$token': typeof PublicTTokenRoute
+  '/admin/questions/$id': typeof AdminQuestionsIdRoute
+  '/archive': typeof PublicArchiveIndexRoute
+  '/archive/category/$slug': typeof PublicArchiveCategorySlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
+  '/_public': typeof PublicRouteWithChildren
+  '/_public/about': typeof PublicAboutRoute
+  '/_public/ask': typeof PublicAskRoute
+  '/_public/prayer': typeof PublicPrayerRoute
+  '/_public/privacy': typeof PublicPrivacyRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/inbox': typeof AdminInboxRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/team': typeof AdminTeamRoute
+  '/_public/': typeof PublicIndexRoute
+  '/admin/': typeof AdminIndexRoute
+  '/_public/archive/$slug': typeof PublicArchiveSlugRoute
+  '/_public/t/$token': typeof PublicTTokenRoute
+  '/admin/questions/$id': typeof AdminQuestionsIdRoute
+  '/_public/archive/': typeof PublicArchiveIndexRoute
+  '/_public/archive/category/$slug': typeof PublicArchiveCategorySlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/admin'
+    | '/'
+    | '/about'
+    | '/ask'
+    | '/prayer'
+    | '/privacy'
+    | '/admin/audit'
+    | '/admin/inbox'
+    | '/admin/login'
+    | '/admin/team'
+    | '/admin/'
+    | '/archive/$slug'
+    | '/t/$token'
+    | '/admin/questions/$id'
+    | '/archive/'
+    | '/archive/category/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/about'
+    | '/ask'
+    | '/prayer'
+    | '/privacy'
+    | '/admin/audit'
+    | '/admin/inbox'
+    | '/admin/login'
+    | '/admin/team'
+    | '/'
+    | '/admin'
+    | '/archive/$slug'
+    | '/t/$token'
+    | '/admin/questions/$id'
+    | '/archive'
+    | '/archive/category/$slug'
+  id:
+    | '__root__'
+    | '/admin'
+    | '/_public'
+    | '/_public/about'
+    | '/_public/ask'
+    | '/_public/prayer'
+    | '/_public/privacy'
+    | '/admin/audit'
+    | '/admin/inbox'
+    | '/admin/login'
+    | '/admin/team'
+    | '/_public/'
+    | '/admin/'
+    | '/_public/archive/$slug'
+    | '/_public/t/$token'
+    | '/admin/questions/$id'
+    | '/_public/archive/'
+    | '/_public/archive/category/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
+  PublicRoute: typeof PublicRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_public': {
+      id: '/_public'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PublicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_public/': {
+      id: '/_public/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof PublicIndexRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/about': {
+      id: '/_public/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof PublicAboutRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/ask': {
+      id: '/_public/ask'
+      path: '/ask'
+      fullPath: '/ask'
+      preLoaderRoute: typeof PublicAskRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/prayer': {
+      id: '/_public/prayer'
+      path: '/prayer'
+      fullPath: '/prayer'
+      preLoaderRoute: typeof PublicPrayerRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/privacy': {
+      id: '/_public/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PublicPrivacyRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/audit': {
+      id: '/admin/audit'
+      path: '/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AdminAuditRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/inbox': {
+      id: '/admin/inbox'
+      path: '/inbox'
+      fullPath: '/admin/inbox'
+      preLoaderRoute: typeof AdminInboxRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/team': {
+      id: '/admin/team'
+      path: '/team'
+      fullPath: '/admin/team'
+      preLoaderRoute: typeof AdminTeamRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/_public/archive/': {
+      id: '/_public/archive/'
+      path: '/archive'
+      fullPath: '/archive/'
+      preLoaderRoute: typeof PublicArchiveIndexRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/archive/$slug': {
+      id: '/_public/archive/$slug'
+      path: '/archive/$slug'
+      fullPath: '/archive/$slug'
+      preLoaderRoute: typeof PublicArchiveSlugRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/t/$token': {
+      id: '/_public/t/$token'
+      path: '/t/$token'
+      fullPath: '/t/$token'
+      preLoaderRoute: typeof PublicTTokenRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/admin/questions/$id': {
+      id: '/admin/questions/$id'
+      path: '/questions/$id'
+      fullPath: '/admin/questions/$id'
+      preLoaderRoute: typeof AdminQuestionsIdRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/_public/archive/category/$slug': {
+      id: '/_public/archive/category/$slug'
+      path: '/archive/category/$slug'
+      fullPath: '/archive/category/$slug'
+      preLoaderRoute: typeof PublicArchiveCategorySlugRouteImport
+      parentRoute: typeof PublicRoute
     }
   }
 }
 
+interface AdminRouteRouteChildren {
+  AdminAuditRoute: typeof AdminAuditRoute
+  AdminInboxRoute: typeof AdminInboxRoute
+  AdminLoginRoute: typeof AdminLoginRoute
+  AdminTeamRoute: typeof AdminTeamRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+  AdminQuestionsIdRoute: typeof AdminQuestionsIdRoute
+}
+
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminAuditRoute: AdminAuditRoute,
+  AdminInboxRoute: AdminInboxRoute,
+  AdminLoginRoute: AdminLoginRoute,
+  AdminTeamRoute: AdminTeamRoute,
+  AdminIndexRoute: AdminIndexRoute,
+  AdminQuestionsIdRoute: AdminQuestionsIdRoute,
+}
+
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
+)
+
+interface PublicRouteChildren {
+  PublicAboutRoute: typeof PublicAboutRoute
+  PublicAskRoute: typeof PublicAskRoute
+  PublicPrayerRoute: typeof PublicPrayerRoute
+  PublicPrivacyRoute: typeof PublicPrivacyRoute
+  PublicIndexRoute: typeof PublicIndexRoute
+  PublicArchiveSlugRoute: typeof PublicArchiveSlugRoute
+  PublicTTokenRoute: typeof PublicTTokenRoute
+  PublicArchiveIndexRoute: typeof PublicArchiveIndexRoute
+  PublicArchiveCategorySlugRoute: typeof PublicArchiveCategorySlugRoute
+}
+
+const PublicRouteChildren: PublicRouteChildren = {
+  PublicAboutRoute: PublicAboutRoute,
+  PublicAskRoute: PublicAskRoute,
+  PublicPrayerRoute: PublicPrayerRoute,
+  PublicPrivacyRoute: PublicPrivacyRoute,
+  PublicIndexRoute: PublicIndexRoute,
+  PublicArchiveSlugRoute: PublicArchiveSlugRoute,
+  PublicTTokenRoute: PublicTTokenRoute,
+  PublicArchiveIndexRoute: PublicArchiveIndexRoute,
+  PublicArchiveCategorySlugRoute: PublicArchiveCategorySlugRoute,
+}
+
+const PublicRouteWithChildren =
+  PublicRoute._addFileChildren(PublicRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  AdminRouteRoute: AdminRouteRouteWithChildren,
+  PublicRoute: PublicRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,64 +1,84 @@
 # GraceLine Answers
 
-**Anonymous Bible Q&A and faith-centered Christian counseling** — a production-ready,
-self-contained web application designed to deploy on **cPanel / DirectAdmin shared
-hosting** as a single Node.js process.
+**Anonymous Bible Q&A and faith-centered Christian counseling.**
 
-People can ask Bible and life questions **completely anonymously**, receive a private,
-scripture-based reply from a real counselor, and browse a searchable archive of
-anonymized answers. There is also a community prayer wall.
+People ask Bible and life questions **completely anonymously**, receive a private,
+scripture-based reply from a real counselor on a tracking-token thread, and — with the
+counselor's rewrite — a question may later appear in a searchable public archive. There is
+also a community prayer wall.
+
+The product runs as **two independently deployed units**:
+
+- **Frontend** (this directory) — TanStack Start / React 19 on **Vercel**. Server-renders every
+  public page for SEO; hosts the seeker thread and the counselor console.
+- **API** (`worker/`) — a **Cloudflare Worker** (Hono) backed by **D1**, **KV**, a
+  **Durable Object** for realtime, **Queues** for email, and **Cron** for scheduled work.
+
+The frontend proxies `/api/*`, `/robots.txt`, `/sitemap.xml` and `/feed.xml` to the Worker so
+the browser sees a single origin (first-party cookies, no CORS). See
+[`docs/architecture.md`](./docs/architecture.md).
+
+> The previous cPanel/Express implementation has been removed. A one-way importer for its
+> SQLite data remains at `worker/scripts/import-sqlite.ts` (see
+> [`docs/operations.md`](./docs/operations.md)).
 
 ---
-
-## The deployable application lives in [`cpanel-app/`](./cpanel-app)
-
-That folder is the actual product — an **Express + React/Vite + SQLite** application that
-runs from a single `app.js` entry point that Phusion Passenger can boot. It needs no
-external database, no Redis, no object storage, no managed task queue, and no third-party
-email service. It uses only the filesystem and a local SQLite file.
-
-- [cpanel-app/README.md](./cpanel-app/README.md) — Product overview, stack, local dev, tests.
-- [cpanel-app/DEPLOY.md](./cpanel-app/DEPLOY.md) — Exact cPanel / DirectAdmin deployment steps.
-
-## Why this architecture?
-
-The repository's own deployment plan (`.lovable/plan.md`) and the deployment docs
-explicitly mandate a **single Node.js process on cPanel/DirectAdmin shared hosting**, and
-rule out Supabase/Vercel/Redis/S3/edge functions (Passenger on shared hosting doesn't
-support Cloudflare Workers or a managed DB, and the brief called for zero external paid
-services). Honouring that documented constraint:
-
-- **Everything runs in one process** Express serves the JSON API and the pre-built SPA.
-- **SQLite** (`better-sqlite3`, with an automatic fallback to Node's built-in `node:sqlite`)
-  is the database — a file on disk, no DB server required.
-- **No external infrastructure** — no Redis, no object storage, no third-party email
-  service (Nodemailer uses your cPanel SMTP account).
-
-## Product capabilities
-
-- Anonymous question submission (IP/UA never stored), crisis-keyword detection with
-  hotline banners.
-- Private threaded conversation via a shareable tracking link (3s HTTP polling).
-- Counselor console: inbox, reply, internal notes, status, sanitize-and-publish.
-- Admin team management: add/remove counselors, reset passwords, assign roles.
-- Public, searchable archive (SQLite FTS5); only hand-sanitized content is indexed.
-- Prayer wall with a "I prayed" counter.
-- Email notifications via cPanel SMTP.
-- Security: JWT in httpOnly cookies, bcrypt hashing, rate limiting, security headers
-  (CSP in production), server-side validation, IDOR-safe authorization.
-- SEO: robots.txt, XML sitemap, RSS feed, and server-injected per-page metadata +
-  JSON-LD (Organization / QAPage / BreadcrumbList) for public pages.
 
 ## Repository layout
 
 ```
-cpanel-app/           The deployable application (Express + React/Vite + SQLite)
-.lovable/plan.md      Original deployment plan & product brief
-src/                  (Lovable scaffold informational page — not the deploy target)
+├── src/                  # Frontend (TanStack Start). Deploys to Vercel.
+│   ├── server.ts         # Nitro entry: /api proxy + SSR error normalisation
+│   ├── routes/           # Public pages, thread, and /admin console
+│   ├── components/       # Design-system components
+│   ├── lib/              # api client, seo/json-ld, formatting
+│   └── styles.css        # GraceLine design tokens + primitives
+├── public/               # favicon, apple-touch-icon, og image, webmanifest
+├── shared/site.ts        # SINGLE source of categories/limits/crisis keywords
+├── worker/               # Cloudflare Worker API + tests + migrations + scripts
+│   ├── src/              # routes, db, middleware, DO, cron, email
+│   ├── test/             # 102 tests (vitest + @cloudflare/vitest-pool-workers)
+│   ├── migrations/       # D1 schema (0001_init.sql)
+│   └── scripts/          # seed.ts, import-sqlite.ts
+├── docs/                 # architecture, deployment, operations, adr/
+└── vercel.json           # Vercel framework + security headers
 ```
 
-## Test status
+## Local development
 
-`npm test` in `cpanel-app/` runs 21 integration tests against an in-memory SQLite
-database, covering auth, submission, messaging, publishing, archive search, prayer,
-robots, sitemap, and SPA meta injection. All pass.
+```bash
+# API (worker/)
+cd worker
+cp .dev.vars.example .dev.vars      # set JWT_SECRET + bootstrap credentials
+npm install
+npx wrangler d1 migrations apply graceline-db --local
+npm run seed:local                  # optional demo content
+npm run dev                         # http://127.0.0.1:8787
+
+# Frontend (repo root, separate terminal)
+npm install
+npm run dev                         # http://localhost:3000 (proxies /api to :8787)
+```
+
+Counselor console: `http://localhost:3000/admin/login` using the
+`ADMIN_BOOTSTRAP_EMAIL` / `ADMIN_BOOTSTRAP_PASSWORD` from `worker/.dev.vars` (created on first
+sign-in while the users table is empty).
+
+## Verification
+
+- API: `cd worker && npm run test` — 102 tests across public, admin, realtime, queue, units and
+  seo suites, run against real miniflare D1/KV/DO/Queue bindings.
+- API types: `cd worker && npx tsc --noEmit`.
+- Frontend: `npm run build` — emits the Vercel serverless output (`.output` / `.vercel`).
+
+## Key properties
+
+- **Anonymity by schema**: no IP / user-agent / device / fingerprint columns anywhere.
+- **Nothing auto-publishes**: an answer is indexable only when a counselor sets `is_public`
+  and fills all three rewritten fields.
+- **Same-origin security**: HttpOnly `gl_session` + double-submit `gl_csrf`, `SameSite=Lax`,
+  `Path=/api`; enumeration-resistant login; per-route rate limits that fail open.
+- **SEO first-class**: SSR pages, canonicals, robots, sitemap, feed and valid JSON-LD in the
+  first HTML response. No ranking guarantees are made or implied.
+
+For the decision trail see [`docs/adr/`](./docs/adr/).
