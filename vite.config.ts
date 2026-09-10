@@ -7,8 +7,20 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
+  vite: {
+    server: {
+      // Preview environments are served from a generated *.e2b.app hostname.
+      // Without this the dev server answers 403 to the preview proxy.
+      allowedHosts: true,
+    },
+  },
+  // The frontend deploys to Vercel; the API is a separate Cloudflare Worker.
+  // Pinning the Nitro preset stops the build emitting a Cloudflare module
+  // nobody deploys, and makes `vercel build` produce the right output shape.
+  nitro: { preset: "vercel" },
   tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
+    // Redirect TanStack Start's bundled server entry to src/server.ts, which
+    // wraps SSR error handling and proxies /api to the Worker.
     // nitro/vite builds from this
     server: { entry: "server" },
   },

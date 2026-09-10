@@ -1,0 +1,44 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "graceline-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+
+  "d1_databases": [
+    { "binding": "DB", "database_name": "graceline-db", "database_id": "REPLACE_WITH_D1_DATABASE_ID", "migrations_dir": "migrations" }
+  ],
+
+  "kv_namespaces": [
+    { "binding": "CACHE", "id": "REPLACE_WITH_KV_NAMESPACE_ID" }
+  ],
+
+  "queues": {
+    "producers": [{ "binding": "EMAIL_QUEUE", "queue": "graceline-email" }],
+    "consumers": [
+      {
+        "queue": "graceline-email",
+        "max_batch_size": 10,
+        "max_batch_timeout": 30,
+        "max_retries": 3,
+        "retry_delay": 30,
+        "dead_letter_queue": "graceline-email-dlq"
+      }
+    ]
+  },
+
+  "durable_objects": {
+    "bindings": [{ "name": "THREAD_ROOM", "class_name": "ThreadRoom" }]
+  },
+
+  "migrations": [{ "tag": "v1", "new_classes": ["ThreadRoom"] }],
+
+  "triggers": { "crons": ["17 * * * *", "30 3 * * *"] },
+
+  "vars": {
+    "PUBLIC_SITE_URL": "https://gracelineanswers.com",
+    "SITE_NAME": "GraceLine Answers",
+    "ENVIRONMENT": "production"
+  }
+}

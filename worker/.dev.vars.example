@@ -1,0 +1,26 @@
+# Local development secrets. Copy to `.dev.vars` and fill in real values.
+# `.dev.vars` is gitignored — never commit real secrets.
+#
+# In production these are set with `wrangler secret put <NAME>`, not in a file.
+
+# REQUIRED in production. HS256 signing key for counselor session tokens.
+# Must be at least 32 characters. The Worker refuses to start in production
+# with a weak or missing value.
+#   Generate one:  openssl rand -base64 48
+JWT_SECRET=
+
+# Used only the first time an administrator signs in, and only while the users
+# table is empty. After bootstrap, change the password in the console; these
+# values are then ignored. The password must be at least 12 characters.
+ADMIN_BOOTSTRAP_EMAIL=admin@example.org
+ADMIN_BOOTSTRAP_PASSWORD=
+
+# Email delivery. "log" writes messages to the console instead of sending them,
+# which is what local development and the test suite use.
+EMAIL_PROVIDER=log
+EMAIL_FROM=GraceLine Answers <hello@example.org>
+
+# Canonical origin of the public site. Used to build sitemap, canonical and
+# feed URLs, so it must match the deployed frontend exactly.
+PUBLIC_SITE_URL=http://localhost:3000
+SITE_NAME=GraceLine Answers
