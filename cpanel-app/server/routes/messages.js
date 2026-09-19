@@ -61,7 +61,7 @@ router.post('/counselor', requireAuth, (req, res) => {
       text: `A counselor has replied to your question.\n\nView the conversation: ${base}/t/${q.tracking_token}`,
     });
   }
-  res.status(201).json({ id: info.lastInsertRowid });
+  res.status(201).json({ id: info.lastInsertRowid, sender_name: req.user.name || null });
 });
 
 // Poll endpoint — returns messages newer than ?since= (id watermark).
@@ -77,15 +77,22 @@ router.get('/poll', (req, res) => {
     if (!user) return res.status(401).json({ error: 'unauthorized' });
     qid = parseId(question_id);
     if (qid === null) return res.status(400).json({ error: 'bad_id' });
+    const q = db.prepare('SELECT id FROM questions WHERE id = ?').get(qid);
+    if (!q) return res.status(404).json({ error: 'not_found' });
   } else {
     return res.status(400).json({ error: 'missing_target' });
   }
   if (!qid) return res.status(404).json({ error: 'not_found' });
 
+  // Seekers (token path) see the counselor's name; the counselor console uses
+  // the full thread endpoint for richer detail.
   const rows = db
     .prepare(
-      `SELECT id, sender_type, content, created_at FROM messages
-       WHERE question_id = ? AND id > ? ORDER BY id ASC`,
+      `SELECT m.id, m.sender_type, m.content, m.created_at,
+              CASE WHEN m.sender_type = 'counselor' THEN u.name ELSE NULL END AS sender_name
+       FROM messages m
+       LEFT JOIN users u ON u.id = m.sender_user_id
+       WHERE m.question_id = ? AND m.id > ? ORDER BY m.id ASC`,
     )
     .all(qid, sinceId);
   res.json({ messages: rows });

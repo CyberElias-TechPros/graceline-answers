@@ -1,0 +1,22 @@
+{
+  "name": "graceline-cloudflare",
+  "version": "0.1.0",
+  "description": "GraceLine Answers \u2014 Cloudflare Workers + D1 + KV + Email API backend (serves the shared React SPA).",
+  "main": "index.js",
+  "scripts": {
+    "client:build": "npm run build --prefix ..",
+    "dev": "wrangler dev --ip 0.0.0.0 --port 8787",
+    "d1:migrate": "wrangler d1 migrations apply graceline-answers-db --local",
+    "test:e2e": "node test/e2e.mjs",
+    "deploy": "wrangler deploy",
+    "test:clean": "rm -rf .wrangler/state && wrangler d1 migrations apply graceline-answers-db --local < /dev/null || yes | wrangler d1 migrations apply graceline-answers-db --local"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "wrangler": "^4.135.0"
+  },
+  "private": true,
+  "type": "module"
+}

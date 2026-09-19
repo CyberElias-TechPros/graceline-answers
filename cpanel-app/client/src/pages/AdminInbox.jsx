@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import { api, fmt } from '../lib/api';
 import { useSeo } from '../lib/seo';
-import { Inbox, AlertTriangle, CheckCircle2, FileText } from 'lucide-react';
+import Reveal from '../components/Reveal';
+import { AlertTriangle, CheckCircle2, FileText, UserPlus } from 'lucide-react';
 
 const TABS = [
   { key: 'new', label: 'New' },
@@ -17,6 +18,7 @@ export default function AdminInbox() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
+  const [claimedId, setClaimedId] = useState(null);
 
   useSeo({ title: 'Counselor Inbox', noindex: true });
 
@@ -37,82 +39,127 @@ export default function AdminInbox() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
+  async function claim(id) {
+    setClaimedId(id);
+    try {
+      await api(`/admin/questions/${id}/claim`, { method: 'POST' });
+      await load();
+    } catch {
+      /* keep button */
+    } finally {
+      setClaimedId(null);
+    }
+  }
+
   return (
     <div>
-      <h1 style={{ fontSize: '1.8rem', marginBottom: '0.4rem' }}>Inbox</h1>
+      <Reveal variant="fade">
+        <h1 style={{ fontSize: '2rem', marginBottom: '0.3rem' }}>Inbox</h1>
+        <p className="muted" style={{ margin: 0 }}>
+          Every question lands here. Claim one to make it yours — the seeker sees you by name.
+        </p>
+      </Reveal>
 
       {stats && (
-        <div className="row wrap" style={{ margin: '1rem 0 1.4rem', gap: '0.7rem' }}>
-          <span className="tag">{stats.new_count} new</span>
-          <span className="tag gold">{stats.active_count} active</span>
-          <span className="tag urgent">
-            <AlertTriangle size={13} /> {stats.urgent_count} urgent
-          </span>
-          <span className="tag outline">
-            <FileText size={13} /> {stats.public_count} published
-          </span>
-        </div>
+        <Reveal variant="up" delay={80}>
+          <div className="admin-stats">
+            <div className="stat-chip">
+              <div className="num">{stats.new_count}</div>
+              <div className="lbl">New</div>
+            </div>
+            <div className="stat-chip">
+              <div className="num">{stats.active_count}</div>
+              <div className="lbl">Active</div>
+            </div>
+            <div className="stat-chip urgent-chip">
+              <div className="num">{stats.urgent_count}</div>
+              <div className="lbl">Urgent</div>
+            </div>
+            <div className="stat-chip">
+              <div className="num">{stats.public_count}</div>
+              <div className="lbl">Published</div>
+            </div>
+          </div>
+        </Reveal>
       )}
 
-      <div className="row" style={{ marginBottom: '1.2rem' }}>
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            className={`btn btn-sm ${t.key === tab ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={() => setTab(t.key)}
-          >
-            {t.label}
-          </button>
-        ))}
-        {me && me.role === 'admin' && (
-          <Link to="/admin/team" className="btn btn-ghost btn-sm" style={{ marginLeft: 'auto' }}>
-            Manage team
-          </Link>
-        )}
-      </div>
+      <Reveal variant="up" delay={140}>
+        <div className="tabs" role="tablist" aria-label="Inbox filters">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              role="tab"
+              aria-selected={tab === t.key}
+              className={`tab ${tab === t.key ? 'active' : ''}`}
+              onClick={() => setTab(t.key)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </Reveal>
 
       {err && <div className="form-error">{err}</div>}
 
-      {loading && items.length === 0 && (
+      {loading ? (
         <div className="stack">
-          <div className="skeleton" style={{ height: 100 }} />
-          <div className="skeleton" style={{ height: 100 }} />
+          <div className="skeleton" style={{ height: 90 }} />
+          <div className="skeleton" style={{ height: 90 }} />
+          <div className="skeleton" style={{ height: 90 }} />
         </div>
-      )}
-
-      {!loading && items.length === 0 && (
-        <div className="state">
-          <div className="state-icon">
-            <Inbox size={24} />
+      ) : items.length === 0 ? (
+        <Reveal variant="fade">
+          <div className="state">
+            <div className="state-icon">
+              <CheckCircle2 size={22} />
+            </div>
+            <h3>Nothing here</h3>
+            <p>No {tab} questions right now. New submissions appear here the moment they arrive.</p>
           </div>
-          <p>No questions in this tab.</p>
+        </Reveal>
+      ) : (
+        <div className="stack">
+          {items.map((q, i) => (
+            <Reveal key={q.id} variant="up" delay={Math.min(i % 5, 4) * 70}>
+              <div className="card inbox-row">
+                {q.is_urgent ? (
+                  <span className="tag urgent" title="Crisis keywords detected">
+                    <AlertTriangle size={13} /> Urgent
+                  </span>
+                ) : (
+                  <span className="tag">{q.category || '—'}</span>
+                )}
+                <div className="inbox-body">
+                  <h3>{q.title}</h3>
+                  <div className="inbox-meta">
+                    <span>Updated {fmt(q.updated_at)}</span>
+                    {q.assigned_to_name ? (
+                      <span className="assignee-chip">
+                        <CheckCircle2 size={13} /> {q.assigned_to_name}
+                        {q.assigned_to === me?.id ? ' (you)' : ''}
+                      </span>
+                    ) : (
+                      <span className="muted">Unassigned</span>
+                    )}
+                  </div>
+                </div>
+                {!q.assigned_to && tab !== 'resolved' && (
+                  <button
+                    className="btn btn-secondary btn-sm claim-btn"
+                    onClick={() => claim(q.id)}
+                    disabled={claimedId === q.id}
+                  >
+                    <UserPlus size={14} /> {claimedId === q.id ? 'Claiming…' : 'Claim'}
+                  </button>
+                )}
+                <Link to={`/admin/q/${q.id}`} className="btn btn-ghost btn-sm">
+                  Open
+                </Link>
+              </div>
+            </Reveal>
+          ))}
         </div>
       )}
-
-      <div className="stack">
-        {items.map((q) => (
-          <Link key={q.id} to={`/admin/q/${q.id}`} className="card card-link" style={{ color: 'inherit' }}>
-            <div className="spread">
-              <h3 style={{ margin: 0 }}>{q.title}</h3>
-              {q.is_urgent ? (
-                <span className="tag urgent">
-                  <AlertTriangle size={13} /> Urgent
-                </span>
-              ) : q.status === 'resolved' ? (
-                <span className="tag gold">
-                  <CheckCircle2 size={13} /> Resolved
-                </span>
-              ) : null}
-            </div>
-            <div className="row wrap" style={{ marginTop: '0.5rem' }}>
-              {q.category && <span className="tag outline">{q.category}</span>}
-              <span className="muted">
-                {q.seeker_email || 'anonymous'} · {fmt(q.updated_at)}
-              </span>
-            </div>
-          </Link>
-        ))}
-      </div>
     </div>
   );
 }

@@ -3,6 +3,10 @@
 Anonymous Bible Q&A and faith-centered Christian counseling — a single Node.js app that
 runs on cPanel / DirectAdmin shared hosting (Phusion Passenger).
 
+> The same product is also deployed on **Cloudflare Workers** (D1 + KV + Email Service)
+> from [`../cloudflare/`](../cloudflare) — the recommended deployment. Both backends
+> expose the same API and serve the same React SPA in `client/`.
+
 > **What it is:** people can ask Bible and life questions completely anonymously. A real
 > counselor responds privately via a unique tracking link. When a Q&A can help others, the
 > counselor writes a sanitized public copy and publishes it to a searchable archive. There
@@ -65,7 +69,9 @@ sitemap, and SPA meta injection.
 ## Product features
 
 - **Anonymous ask** — IP/UA/fingerprint are never stored for anonymous submissions.
-- **Private threaded conversation** — a shareable tracking link, polled for new messages.
+- **Private threaded conversation** — a shareable tracking link, polled for new messages;
+  counselor replies carry the counselor's name.
+- **Claim/assign workflow** — counselors claim questions; assignees show in the inbox.
 - **Counselor console** — inbox (new/active/resolved), reply, internal notes, status,
   publish to archive.
 - **Team management** (admin only) — add/remove counselors, reset passwords, assign roles.
