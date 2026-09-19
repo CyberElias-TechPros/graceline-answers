@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api, fmt } from '../lib/api';
 import { useSeo } from '../lib/seo';
-import { Send, Copy, ShieldCheck, Phone, Bookmark } from 'lucide-react';
+import Reveal from '../components/Reveal';
+import Particles from '../components/Particles';
+import CrisisBanner from '../components/CrisisBanner';
+import { Send, Copy, ShieldCheck, Bookmark, MessageCircleHeart } from 'lucide-react';
 
 export default function Thread() {
   const { token } = useParams();
@@ -38,10 +41,12 @@ export default function Thread() {
   }, [token]);
 
   useEffect(() => {
-    if (!data) return;
+    if (!data) return undefined;
     const t = setInterval(async () => {
       try {
-        const r = await api(`/messages/poll?token=${encodeURIComponent(token)}&since=${lastIdRef.current}`);
+        const r = await api(
+          `/messages/poll?token=${encodeURIComponent(token)}&since=${lastIdRef.current}`,
+        );
         if (r.messages.length) {
           setData((d) => ({ ...d, messages: [...d.messages, ...r.messages] }));
           lastIdRef.current = r.messages[r.messages.length - 1].id;
@@ -84,103 +89,135 @@ export default function Thread() {
 
   if (err)
     return (
-      <div className="container container-narrow section">
-        <div className="form-error">This private conversation could not be found. {err}</div>
+      <div className="container container-narrow section" style={{ paddingTop: '7rem' }}>
+        <div className="state">
+          <div className="state-icon">
+            <MessageCircleHeart size={22} />
+          </div>
+          <h3>Conversation not found</h3>
+          <p>This private thread doesn't exist, or the link may be incomplete. {err}</p>
+        </div>
       </div>
     );
+
   if (!data)
     return (
-      <div className="container container-narrow section">
-        <div className="state">
-          <div className="state-icon">…</div>
-          <p>Loading your conversation…</p>
-        </div>
+      <div className="container container-narrow section" style={{ paddingTop: '7rem' }}>
+        <div className="skeleton" style={{ height: 34, width: '55%', margin: '0 auto 1.4rem' }} />
+        <div className="skeleton" style={{ height: 200, margin: '0 auto' }} />
+        <div className="skeleton" style={{ height: 60, width: '80%', margin: '1.4rem auto 0' }} />
       </div>
     );
 
   const q = data.question;
+
   return (
-    <div className="container container-narrow section" style={{ paddingBottom: '3rem' }}>
-      <div className="spread" style={{ marginBottom: '1.4rem' }}>
-        <span className="eyebrow">Your private thread</span>
-        <button className="btn btn-ghost btn-sm" onClick={copyLink}>
-          <Copy size={15} /> {copied ? 'Copied!' : 'Copy link'}
-        </button>
-      </div>
+    <div className="section" style={{ paddingTop: '6.5rem', paddingBottom: '3.5rem' }}>
+      <div className="container container-narrow" style={{ position: 'relative' }}>
+        <Particles count={8} seed={9} />
 
-      <h1 style={{ marginBottom: '0.6rem' }}>{q.title}</h1>
-      <div className="row wrap" style={{ marginBottom: '0.6rem' }}>
-        {q.category && <span className="tag">{q.category}</span>}
-        {q.is_urgent ? <span className="tag urgent">Urgent</span> : null}
-        <span className="muted">Asked {fmt(q.created_at)}</span>
-      </div>
-
-      <div className="disclaimer" style={{ marginTop: '0.8rem' }}>
-        <Bookmark size={15} style={{ verticalAlign: 'middle', marginRight: 6 }} />
-        <strong>Save this link.</strong> It's the only way back to this conversation. Bookmark it or
-        copy it somewhere safe.
-      </div>
-
-      {data.crisis?.isCrisis && (
-        <div className="crisis" role="alert">
-          <strong style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Phone size={16} /> {data.crisis.banner.title}
-          </strong>
-          {data.crisis.banner.lines.map((l, i) => (
-            <div key={i} style={{ marginTop: 4 }}>
-              {l}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="card" style={{ marginTop: '1.4rem', background: 'var(--accent-softer)', borderColor: 'var(--line)' }}>
-        <div style={{ whiteSpace: 'pre-wrap' }}>{q.content}</div>
-      </div>
-
-      <h3 style={{ margin: '2rem 0 0.6rem' }}>Conversation</h3>
-      {data.messages.length === 0 && (
-        <p className="muted">
-          A counselor will respond soon. Check back — or save this link to come back later.
-        </p>
-      )}
-
-      <div
-        ref={scrollRef}
-        style={{ maxHeight: '46vh', overflowY: 'auto', padding: '0.4rem 0.4rem 0.4rem 0', marginBottom: '0.4rem' }}
-      >
-        {data.messages.map((m) => (
-          <div key={m.id} className={`msg ${m.sender_type}`}>
-            <div style={{ whiteSpace: 'pre-wrap' }}>{m.content}</div>
-            <div className="meta">
-              <span className="label">{m.sender_type === 'counselor' ? 'Counselor' : 'You'}</span>
-              {' · '}
-              {fmt(m.created_at)}
-            </div>
+        <Reveal variant="fade">
+          <div className="spread" style={{ marginBottom: '1.1rem' }}>
+            <span className="eyebrow" style={{ marginBottom: 0 }}>
+              <i className="eyebrow-line" aria-hidden="true" />
+              Your private thread
+            </span>
+            <button className="btn btn-ghost btn-sm" onClick={copyLink}>
+              <Copy size={14} /> {copied ? 'Copied!' : 'Copy link'}
+            </button>
           </div>
-        ))}
-      </div>
 
-      <form onSubmit={send} className="panel" style={{ marginTop: '1.2rem' }}>
-        <label htmlFor="reply">Reply</label>
-        <textarea
-          id="reply"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Write a follow-up…"
-        />
-        <div style={{ marginTop: '0.9rem' }}>
-          <button className="btn btn-primary" disabled={sending || !draft.trim()}>
-            <Send size={16} />
-            {sending ? 'Sending…' : 'Send'}
-          </button>
-        </div>
-      </form>
+          <h1 style={{ fontSize: 'clamp(1.9rem, 4vw, 2.6rem)', marginBottom: '0.5rem' }}>
+            {q.title}
+          </h1>
+          <div className="row wrap" style={{ marginBottom: '1rem' }}>
+            {q.category && <span className="tag gold">{q.category}</span>}
+            {q.is_urgent ? <span className="tag urgent">Urgent</span> : null}
+            <span className="muted">Asked {fmt(q.created_at)}</span>
+            {q.updated_at ? <span className="muted">· Active {fmt(q.updated_at)}</span> : null}
+          </div>
 
-      <div className="disclaimer" style={{ marginTop: '1.4rem' }}>
-        <ShieldCheck size={15} style={{ verticalAlign: 'middle', marginRight: 6 }} />
-        This conversation is private to you and the counselor. We never log your IP address for
-        anonymous submissions.
+          <div className="save-ribbon">
+            <Bookmark size={16} />
+            <span>
+              <strong>Save this link.</strong> It's the only way back to this conversation —
+              bookmark it or copy it somewhere safe.
+            </span>
+          </div>
+
+          {data.crisis?.isCrisis && <CrisisBanner banner={data.crisis.banner} />}
+        </Reveal>
+
+        <Reveal variant="up" delay={120}>
+          <div className="question-card" style={{ marginTop: '1.6rem' }}>
+            {q.content}
+          </div>
+        </Reveal>
+
+        <Reveal variant="up" delay={200}>
+          <h3 style={{ margin: '2.4rem 0 0.4rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <MessageCircleHeart size={18} style={{ color: 'var(--gold)' }} /> Conversation
+          </h3>
+
+          {data.messages.length === 0 ? (
+            <div className="empty-convo">
+              <MessageCircleHeart size={26} />
+              <p style={{ margin: 0 }}>
+                A counselor will respond soon. Save this link and check back — we read every
+                message with care.
+              </p>
+            </div>
+          ) : (
+            <div
+              ref={scrollRef}
+              className="conversation"
+              role="log"
+              aria-label="Conversation messages"
+            >
+              {data.messages.map((m) => (
+                <div key={m.id} className={`msg ${m.sender_type}`}>
+                  <div className="msg-bubble">{m.content}</div>
+                  <div className="msg-meta">
+                    <span className="msg-sender">
+                      {m.sender_type === 'counselor' ? m.sender_name || 'Counselor' : 'You'}
+                    </span>
+                    <span>·</span>
+                    <span>{fmt(m.created_at)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Reveal>
+
+        <Reveal variant="up" delay={260}>
+          <form onSubmit={send} className="panel" style={{ marginTop: '1.5rem' }}>
+            <label htmlFor="reply">Write a follow-up</label>
+            <textarea
+              id="reply"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Write a follow-up…"
+              style={{ minHeight: 100 }}
+            />
+            <div style={{ marginTop: '1rem' }}>
+              <button className="btn btn-gold" disabled={sending || !draft.trim()}>
+                <Send size={16} />
+                {sending ? 'Sending…' : 'Send'}
+              </button>
+            </div>
+          </form>
+        </Reveal>
+
+        <Reveal variant="fade" delay={300}>
+          <div className="disclaimer">
+            <ShieldCheck size={15} />
+            <span>
+              This conversation is private to you and the counselor. We never log your IP address
+              for anonymous submissions.
+            </span>
+          </div>
+        </Reveal>
       </div>
     </div>
   );

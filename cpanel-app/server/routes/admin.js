@@ -59,13 +59,50 @@ router.get('/questions', (req, res) => {
   const st = allowed.includes(status) ? status : 'new';
   const rows = db
     .prepare(
-      `SELECT id, tracking_token, raw_title AS title, category, is_urgent,
-              status, seeker_email, created_at, updated_at
-       FROM questions WHERE status = ?
-       ORDER BY is_urgent DESC, updated_at DESC LIMIT 200`,
+      `SELECT q.id, q.tracking_token, q.raw_title AS title, q.category, q.is_urgent,
+              q.status, q.seeker_email, q.created_at, q.updated_at,
+              q.assigned_to, u.name AS assigned_to_name
+       FROM questions q
+       LEFT JOIN users u ON u.id = q.assigned_to
+       WHERE q.status = ?
+       ORDER BY q.is_urgent DESC, q.updated_at DESC LIMIT 200`,
     )
     .all(st);
   res.json({ items: rows });
+});
+
+// Claim a question for yourself (assigns ownership; the seeker sees you by name).
+router.post('/questions/:id/claim', (req, res) => {
+  const id = parseId(req.params.id);
+  if (id === null) return res.status(400).json({ error: 'bad_id' });
+  const q = db.prepare('SELECT id, assigned_to FROM questions WHERE id = ?').get(id);
+  if (!q) return res.status(404).json({ error: 'not_found' });
+  if (q.assigned_to === req.user.id) return res.json({ ok: true, already: true });
+  if (q.assigned_to && q.assigned_to !== req.user.id && req.user.role !== 'admin') {
+    return res.status(409).json({ error: 'already_assigned' });
+  }
+  db.prepare('UPDATE questions SET assigned_to = ?, updated_at = ? WHERE id = ?').run(
+    req.user.id,
+    Date.now(),
+    id,
+  );
+  res.json({ ok: true, assigned_to: req.user.id });
+});
+
+// Release your assignment (assignee or admin).
+router.post('/questions/:id/unclaim', (req, res) => {
+  const id = parseId(req.params.id);
+  if (id === null) return res.status(400).json({ error: 'bad_id' });
+  const q = db.prepare('SELECT id, assigned_to FROM questions WHERE id = ?').get(id);
+  if (!q) return res.status(404).json({ error: 'not_found' });
+  if (q.assigned_to !== req.user.id && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'forbidden' });
+  }
+  db.prepare('UPDATE questions SET assigned_to = NULL, updated_at = ? WHERE id = ?').run(
+    Date.now(),
+    id,
+  );
+  res.json({ ok: true });
 });
 
 // Full thread (raw content visible to counselor)

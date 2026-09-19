@@ -240,3 +240,70 @@ test('counselor reply with malformed question id returns 400 (not 500)', async (
   const r2 = await post('/messages/counselor', { question_id: 'not-a-number', content: 'hello' });
   assert.equal(r2.status, 400);
 });
+
+test('public stats endpoint returns aggregates (no PII)', async () => {
+  const r = await get('/stats');
+  assert.equal(r.status, 200);
+  const b = await r.json();
+  assert.equal(typeof b.questions_total, 'number');
+  assert.equal(typeof b.published_total, 'number');
+  assert.equal(typeof b.prayers_total, 'number');
+  // No raw content or email fields may leak.
+  assert.equal(JSON.stringify(b).includes('example.com'), false);
+});
+
+test('counselor claim/unclaim workflow', async () => {
+  const sub = await post('/questions', { title: 'Claim test', content: 'A question used to verify the claim and unclaim workflow.' });
+  const { id } = await sub.json();
+
+  const claim = await post(`/admin/questions/${id}/claim`, {});
+  assert.equal(claim.status, 200);
+  const cb = await claim.json();
+  assert.equal(cb.assigned_to, 1);
+
+  // Re-claim is idempotent.
+  const again = await post(`/admin/questions/${id}/claim`, {});
+  assert.equal((await again.json()).already, true);
+
+  // Inbox row exposes the assignee name.
+  const inbox = await get('/admin/questions?status=new', adminCookie);
+  const row = (await inbox.json()).items.find((q) => q.id === id);
+  assert.equal(row.assigned_to, 1);
+  assert.ok(row.assigned_to_name, 'assigned_to_name present');
+
+  const unclaim = await post(`/admin/questions/${id}/unclaim`, {});
+  assert.equal(unclaim.status, 200);
+  const inbox2 = await get('/admin/questions?status=new', adminCookie);
+  const row2 = (await inbox2.json()).items.find((q) => q.id === id);
+  assert.equal(row2.assigned_to, null);
+
+  // A non-assignee cannot unclaim.
+  await post(`/admin/questions/${id}/claim`, {});
+  const r = await fetch(`${global.__base}/api/admin/questions/${id}/unclaim`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+  });
+  assert.equal(r.status, 401); // no session at all -> 401
+});
+
+test('seeker thread shows counselor name and last activity', async () => {
+  const sub = await post('/questions', { title: 'Name test', content: 'A question to verify counselor names appear on the seeker thread.' });
+  const { id, tracking_token } = await sub.json();
+  await post(`/admin/questions/${id}/claim`, {});
+  const reply = await post('/messages/counselor', { question_id: id, content: 'A caring reply with scripture.' });
+  assert.equal(reply.status, 201);
+  const rb = await reply.json();
+  assert.ok(typeof rb.sender_name === 'string');
+
+  const thread = await get(`/questions/by-token/${tracking_token}`);
+  const tb = await thread.json();
+  assert.equal(tb.question.status, 'active');
+  assert.equal(typeof tb.question.updated_at, 'number');
+  assert.equal(tb.messages[0].sender_type, 'counselor');
+  assert.ok(tb.messages[0].sender_name, 'counselor name visible to seeker');
+});
+
+test('poll returns 404 for unknown counselor question id', async () => {
+  const r = await get('/messages/poll?question_id=999999&since=0', adminCookie);
+  assert.equal(r.status, 404);
+});

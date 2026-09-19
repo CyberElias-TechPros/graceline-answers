@@ -1,0 +1,66 @@
+{
+  // GraceLine Answers — Cloudflare Workers deployment
+  //
+  // Local development (no account needed):
+  //   npm install
+  //   npm run client:build
+  //   npx wrangler d1 migrations apply graceline-answers-db --local
+  //   npm run dev          (serves on http://0.0.0.0:8787)
+  //
+  // Production: see DEPLOY.md — create the D1 database and KV namespace,
+  // replace the placeholder ids below, set secrets, then `npm run deploy`.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "graceline-answers",
+  "main": "src/index.js",
+  "compatibility_date": "2025-06-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // The built React SPA. The Worker serves it (with per-route SEO meta
+  // injection) and falls back to index.html for client-side routes.
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "../cpanel-app/client/dist",
+    // Treat HTML as plain files (no trailing-slash redirects) so the Worker
+    // can fetch /index.html for SPA fallback + meta injection.
+    "html_handling": "none",
+    // Route EVERY request through the User Worker (assets stay fetchable via
+    // env.ASSETS) so per-route SEO meta + JSON-LD can be injected into the SPA
+    // shell and security headers are applied to every response.
+    "run_worker_first": true
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "graceline-answers-db",
+      // PLACEHOLDER — replace with the id from `wrangler d1 create graceline-answers-db`
+      "database_id": "00000000-0000-4000-8000-000000000001"
+    }
+  ],
+
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      // PLACEHOLDER — replace with the id from `wrangler kv namespace create graceline-ratelimit`
+      "id": "00000000-0000-4000-8000-000000000002"
+    }
+  ],
+
+  // Cloudflare Email API binding (`env.MAIL.send(to, message)`).
+  // In production, `destination_address` must be a verified address on a domain
+  // you control. In `wrangler dev` mode emails are captured locally and logged.
+  "send_email": [
+    {
+      "name": "MAIL",
+      "destination_address": "counselors@graceline-answers.example"
+    }
+  ],
+
+  "vars": {
+    "SITE_NAME": "GraceLine Answers",
+    // Public base URL without trailing slash (emails, sitemap, canonical).
+    // In production set this to your real domain (wrangler secret put not needed —
+    // it's public metadata) or leave blank to derive from the request origin.
+    "PUBLIC_BASE_URL": ""
+  }
+}

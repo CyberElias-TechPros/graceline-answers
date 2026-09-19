@@ -1,0 +1,14 @@
+# Copy to `cloudflare/.dev.vars` for local development (gitignored).
+# `wrangler dev` reads this file automatically — it is the local equivalent of
+# `wrangler secret put` in production.
+
+# >= 32 chars. Generate with:
+#   node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+JWT_SECRET=replace_with_64_hex_chars_of_randomness
+
+# Bootstrap counselor (admin) created on first boot when the users table is empty.
+ADMIN_BOOTSTRAP_EMAIL=admin@graceline.test
+ADMIN_BOOTSTRAP_PASSWORD=graceline-admin-1234
+
+# Optional: disable rate limits while running the E2E suite repeatedly.
+# RATE_LIMIT_BYPASS=1

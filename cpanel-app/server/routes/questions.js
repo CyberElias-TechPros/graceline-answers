@@ -15,6 +15,8 @@ const submitLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many submissions. Please try again later.' },
+  // Skip limiter for test/CI so automated tests aren't throttled.
+  skip: () => process.env.NODE_ENV === 'test',
 });
 
 /**
@@ -93,15 +95,18 @@ router.get('/by-token/:token', (req, res) => {
   const q = db
     .prepare(
       `SELECT id, tracking_token, category, raw_title AS title, raw_content AS content,
-              is_urgent, status, created_at
+              is_urgent, status, created_at, updated_at
        FROM questions WHERE tracking_token = ?`,
     )
     .get(req.params.token);
   if (!q) return res.status(404).json({ error: 'not_found' });
   const messages = db
     .prepare(
-      `SELECT id, sender_type, content, created_at FROM messages
-       WHERE question_id = ? ORDER BY id ASC`,
+      `SELECT m.id, m.sender_type, m.content, m.created_at,
+              CASE WHEN m.sender_type = 'counselor' THEN u.name ELSE NULL END AS sender_name
+       FROM messages m
+       LEFT JOIN users u ON u.id = m.sender_user_id
+       WHERE m.question_id = ? ORDER BY m.id ASC`,
     )
     .all(q.id);
   const crisis = detectCrisis(`${q.title}\n${q.content}`);

@@ -28,29 +28,31 @@ export default function AdminLayout() {
   }, [nav]);
 
   async function logout() {
-    await api('/admin/logout', { method: 'POST' });
+    try {
+      await api('/admin/logout', { method: 'POST' });
+    } catch {
+      /* proceed to login either way */
+    }
     nav('/admin/login');
   }
 
   if (checking)
     return (
-      <div className="container container-narrow section">
-        <div className="state">
-          <div className="skeleton" style={{ height: 40, width: 200, margin: '0 auto 1rem' }} />
-          <p>Checking your session…</p>
-        </div>
+      <div className="admin-shell">
+        <div className="skeleton" style={{ height: 44, width: 220, marginBottom: '1.4rem' }} />
+        <div className="skeleton" style={{ height: 120 }} />
       </div>
     );
 
   return (
-    <div className="container section" style={{ maxWidth: 980 }}>
-      <div className="spread" style={{ marginBottom: '1.6rem' }}>
-        <div className="row" style={{ gap: '0.7rem' }}>
-          <span className="brand-mark" style={{ width: 38, height: 38, borderRadius: 11 }}>
-            <ShieldCheck size={20} />
+    <div className="container admin-shell">
+      <div className="admin-header">
+        <div className="admin-id">
+          <span className="admin-avatar">
+            {(me?.name || me?.email || 'C').slice(0, 1).toUpperCase()}
           </span>
           <div>
-            <div style={{ fontWeight: 700 }}>Counselor console</div>
+            <div style={{ fontWeight: 700, fontSize: '1.05rem' }}>Counselor console</div>
             {me && (
               <div className="muted" style={{ fontSize: '0.82rem' }}>
                 {me.name || me.email} · {me.role}
@@ -59,18 +61,18 @@ export default function AdminLayout() {
           </div>
         </div>
         <div className="row wrap">
-          <NavLink to="/admin/inbox" className="btn btn-ghost btn-sm">
+          <NavLink to="/admin/inbox" className={({ isActive }) => `btn btn-sm ${isActive ? 'btn-secondary' : 'btn-ghost'}`}>
             <Inbox size={15} /> Inbox
           </NavLink>
           {me && me.role === 'admin' && (
-            <NavLink to="/admin/team" className="btn btn-ghost btn-sm">
+            <NavLink to="/admin/team" className={({ isActive }) => `btn btn-sm ${isActive ? 'btn-secondary' : 'btn-ghost'}`}>
               <Users size={15} /> Team
             </NavLink>
           )}
           <NavLink to="/" className="btn btn-ghost btn-sm">
             <LayoutDashboard size={15} /> Site
           </NavLink>
-          <button className="btn btn-secondary btn-sm" onClick={logout}>
+          <button className="btn btn-ghost btn-sm" onClick={logout}>
             <LogOut size={15} /> Logout
           </button>
         </div>

@@ -12,6 +12,7 @@ const archive = require('./routes/archive');
 const admin = require('./routes/admin');
 const prayer = require('./routes/prayer');
 const seo = require('./routes/seo');
+const stats = require('./routes/stats');
 
 /**
  * Build the Express app (no `.listen()`). Isolated from process startup so tests can
@@ -67,6 +68,7 @@ function createApp() {
   app.use('/api/archive', archive);
   app.use('/api/admin', admin);
   app.use('/api/prayer', prayer);
+  app.use('/api/stats', stats);
 
   // SEO endpoints (robots.txt, sitemap.xml, rss) — served before the SPA fallback.
   app.use(seo);

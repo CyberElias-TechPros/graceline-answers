@@ -1,6 +1,19 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+
+// Self-hosted type: Fraunces (cinematic display serif) + Manrope (UI sans).
+import '@fontsource/fraunces/400.css';
+import '@fontsource/fraunces/500.css';
+import '@fontsource/fraunces/600.css';
+import '@fontsource/fraunces/400-italic.css';
+import '@fontsource/fraunces/500-italic.css';
+import '@fontsource/manrope/400.css';
+import '@fontsource/manrope/500.css';
+import '@fontsource/manrope/600.css';
+import '@fontsource/manrope/700.css';
+import '@fontsource/manrope/800.css';
+
 import './styles.css';
 import Layout from './Layout.jsx';
 import AdminLayout from './components/AdminLayout.jsx';
@@ -14,6 +27,7 @@ import AdminLogin from './pages/AdminLogin.jsx';
 import AdminInbox from './pages/AdminInbox.jsx';
 import AdminThread from './pages/AdminThread.jsx';
 import AdminTeam from './pages/AdminTeam.jsx';
+import NotFound from './pages/NotFound.jsx';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -33,6 +47,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="q/:id" element={<AdminThread />} />
             <Route path="team" element={<AdminTeam />} />
           </Route>
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </BrowserRouter>
